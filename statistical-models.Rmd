@@ -1,0 +1,23 @@
+---
+title: 'STA 310: Final Project'
+author: "Joyce Gill, Matthew Billings-Chiu"
+date: "2025-05-02"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+
+```{r}
+## Open Data
+data <- read.csv("https://raw.githubusercontent.com/joycegill/Thyroid-Cancer-Recurrence-Prediction/main/filtered_thyroid_data.csv")
+head(data)
+```
+
