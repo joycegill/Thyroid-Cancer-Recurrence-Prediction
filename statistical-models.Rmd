@@ -18,6 +18,8 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(forcats)
+library(kableExtra)
+library(gridExtra)
 ```
 
 ```{r echo = F, include = F}
@@ -31,7 +33,10 @@ data <- read.csv("https://raw.githubusercontent.com/joycegill/Thyroid-Cancer-Rec
   
   Luckily, thyroid cancer has treatment options, including surgical removal and Radioactive Iodine therapy (RAI) that targets cancerous thyroid cells by exposing them to radioactive iodine (which is primarily taken up by the thyroid). However, treatment response can vary, and monitoring how well a patient responds is critical. We believe that a poor response may increase the likelihood of recurrence. As such, understanding factors such as treatment response on recurrence is highly valuable for deciding a patient’s next steps.
   
-  This study investigates the following research question: Holding other relevant factors constant (age, gender, prior radiotherapy, and clinical risk classification), how does initial treatment response predict thyroid cancer recurrence? Our findings indicate that treatment response is a statistically significant predictor of recurrence when controlling for age, gender, radiotherapy history, and risk classification. We also explore the relationships among these explanatory variables for further statistical analysis.
+  This study investigates the following research question: Holding other relevant factors constant (age, gender, prior radiotherapy, and clinical risk classification), how does initial treatment response predict thyroid cancer recurrence? We hypothesize that the response to the treatment is a statistically significant predictor of thyroid cancer recurrence, holding other variables we suspect to be significant constant.
+  
+Our findings indicate that treatment response is a statistically significant predictor of recurrence when controlling for age, gender, radiotherapy history, and risk classification. We also explore the relationships among these explanatory variables for further statistical analysis.
+  
   
 ## **Methods**
 The dataset for this study was sourced from Kaggle and originates from a published article by Hamadan University in the European Archives of Oto-Rhino-Laryngology. It contains data on 383 thyroid cancer patients, each of whom was followed for at least 10 years, with records spanning over a 15-year period. The dataset includes information related to patient demographics, treatment history, and clinical outcomes.
@@ -45,7 +50,9 @@ To answer our research question, we examined the following variables:
 - Risk (3 Level Categorical Explanatory Variable): Cancer risk classification (low, medium, high).
 - Response (4 Level Categorical Explanatory Variable): Initial treatment response (excellent, indeterminate, structural incomplete, biochemical incomplete).
 
-Since our primary predictors are categorical, the assumption of linearity in the logit is satisfied by the nature of categorical predictors. Additionally, the assumptions of independence and randomness were reasonably met based on the data collection methodology.
+For further analysis, we recoded the Recurrence variable as a binary indicator (0 = no recurrence, 1 = recurrence) and collapsed Risk into a binary variable (high vs. not high). We then fit a multiple logistic regression model using recurrence as the response variable and the following as predictors: treatment response, age, gender, radiotherapy history, and binary risk classification. 
+
+Since our primary predictors are categorical, the assumption of linearity in the logit is satisfied by the nature of categorical predictors. Additionally, the assumptions of independence and randomness were reasonably met based on the data collection methodology. (WE WILL DISCUSS THIS MORE IN FINAL DRAFT)
 
 ```{r echo = F, include = F}
 data <- data %>%
@@ -61,9 +68,18 @@ data <- data %>%
 
 ```{r echo = F, include = F, Warning = F}
 logistic_model <- glm(Recurred ~ Response + Age + Gender + Hx.Radiothreapy + risk_binary, data, family = "binomial")
-summary(logistic_model)
+#summary(logistic_model)
 ```
-For further analysis, we recoded the Recurrence variable as a binary indicator (0 = no recurrence, 1 = recurrence) and collapsed Risk into a binary variable (high vs. not high). We then fit a multiple logistic regression model using recurrence as the response variable and the following as predictors: treatment response, age, gender, radiotherapy history, and binary risk classification. The fitted model is structured as follows: 
+
+
+## **Analysis and Results**
+
+The summary table from the model as described above is:
+```{r echo = F, Warning = F}
+kable(summary(logistic_model)$coefficients, digits = 3, caption = "Logistic Regression for Thyroid Cancer Recurrence")
+```
+
+The fitted model is structured as follows: 
 
 \begin{align*}
 \log\left(\frac{\pi}{1 - \pi}\right) =\ & 24.05538 \\
@@ -76,38 +92,50 @@ For further analysis, we recoded the Recurrence variable as a binary indicator (
 & - 26.05770\,\text{(risk\_binaryNotHigh)}
 \end{align*}
 
+From this, we can see that the response to treatment is a statistically significant predictor of thyroid cancer recurrence.
 
-## **Analysis and Results**
+With a coefficient of -4.69692, this indicates that for patients in the Excellent response group, the predicted odds of thyroid recurrence are about 99.1% lower with all other variables held constant. With a coefficient of -1.66295, this indicates that for patients whose response was indeterminate, that group had predicted odds of thyroid recurrence are about 81.1% lower compared to the reference while all other variables are held constant. Finally, the group that had a Structural Incomplete response had a coefficient of 4.00775, meaning that the predicted odds of thyroid recurrence are about 5408% compared to the reference while all other variables are held constant. This difference in results and predicted thyroid recurrence shows that the response to treatment is not only statistically significant, but may have large outcomes on patient health. #! (WE WILL BE SWAPPING THE REFERENCE FROM BIOCHEMICAL INCOMPLETE TO INDETERMINATE)
 
-```{r}
-ggplot(data, aes(x = Age, y = Recurred)) + 
+```{r echo = F, fig.width = 10, fig.height= 6}
+ggplot(data, aes(x = Response, y = Recurred/sum(Recurred))) +
+  geom_col() +
+  labs(x = "Response to Treatment", y = "Proportion of Recurrence", title = "Proportion of Recurrence by Treatment Resposne")
+```
+
+This graph shows the proportion of recurrence by treatment response.
+
+However, we also want to look at some of the other variables that were close to statistical significance (particularly age and gender) and how they may relate to how the patient responds to treatment, as well as their effects on recurrence.
+
+Age & Gender Effects on Recurrence:
+```{r , Message = F, Warning = F, fig.width = 5, fig.height= 3, echo = F}
+
+p1 <- ggplot(data, aes(x = Age, y = Recurred)) + 
   geom_jitter(height = 0.02, alpha = 0.6) +
   geom_smooth(method = "glm", method.args = list(family = "binomial"))
-```
-```{r}
-ggplot(data, aes(x = Gender, fill = factor(Recurred))) +
+
+p2 <- ggplot(data, aes(x = Gender, fill = factor(Recurred))) +
   geom_bar(position = "fill") +
   labs(y = "Proportion", fill = "Recurrence")
+
+suppressMessages(suppressWarnings(grid.arrange(p1, p2, nrow = 1)))
 ```
 
-```{r}
-ggplot(data, aes(x = factor(Gender), fill = risk_binary)) +
-  geom_bar(position = "fill") 
-```
 
-```{r}
-ggplot(data, aes(x = Hx.Radiothreapy, y = Age)) +
-  geom_boxplot()
-```
-
-```{r}
+Age & Gender effects on Response:
+```{r , Message = F, Warning = F, fig.width = 10, fig.height= 6, echo = F}
 ggplot(data, aes(x = Age, y = Response)) + 
   geom_boxplot()
 
+ggplot(data, aes(x = factor(Gender), fill = Response)) +
+  geom_bar(position = "fill")
+
 model <- aov(Age ~ Response, data)
+summary(model)
 TukeyHSD(model)
 ```
+From a an ANOVA and Tukey's, we see that Age is highly relevant to treatment response, particularly in separating Excellent from the other categories. Additionally, females were much more likely to have a better response to treatment than males.
 
+As such, some multicollinearity between Age/Gender and Recurrence are present, perhaps due to Age/Gender having an effect on Response treatment.
 
 ## **Discussion**
 
