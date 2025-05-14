@@ -22,6 +22,8 @@ library(kableExtra)
 library(gridExtra)
 library(car)
 library(GGally)
+library(gglm)
+library(broom)
 ```
 
 ```{r echo = F, include = F}
@@ -31,17 +33,16 @@ data <- read.csv("https://raw.githubusercontent.com/joycegill/Thyroid-Cancer-Rec
 
 \newpage
 ## **Introduction**
-Cancer is the unregulated proliferation of cells which consume dangerous and disproportionately high amounts of energy from the body. These cells can shunt blood flow to maintain their high metabolic cost and increasing size (potentially blocking organ function), which becomes deadly, especially if it metastasizes (spreading elsewhere in the body) (Mayo Clinic 2024). In the United States, cancer is the leading cause of death for people under 65 years old (Cancer.gov 2025). We plan to study thyroid cancer specifically, which is projected to have 44,000 new cases this year, and is unique in that (although statistically insignificant) its death rate has trended upwards in recent years (whereas many have had a statistically significant decrease) (Cancer.gov 2025). Thyroid cancer occurs in the thyroid, an endocrine system gland located at the base of the neck that regulates heart rate, blood pressure, body temperature and weight hormonally (Borzooei et al. 2023).
+Cancer is the unregulated proliferation of cells which consume dangerous and disproportionately high amounts of energy from the body. In the United States, cancer is the leading cause of death for people under 65 years old, which calls for more research (Cancer.gov 2025). This study focuses on thyroid cancer, which is projected to account for approximately 44,000 new cases this year. Unlike many other cancer types with significantly declining mortality rates, thyroid cancer has exhibited a slight upward trend in mortality. (Cancer.gov, 2025).
+
+Luckily, thyroid cancer is often treatable, with common interventions including surgical removal of the thyroid and Radioactive Iodine therapy (RAI), which selectively targets thyroid tissues via systemic administration of radioactive iodine (Mayo Clinic 2024). However, treatment response can vary, and understanding the relationship between initial treatment outcome and recurrence is essential for guiding clinical follow-up and secondary interventions. 
   
-Luckily, thyroid cancer has treatment options, including surgical removal and Radioactive Iodine therapy (RAI) that targets cancerous thyroid cells by exposing them to radioactive iodine (which is primarily taken up by the thyroid) (Mayo Clinic 2024). However, treatment response can vary, and monitoring how well a patient responds is critical. We believe that a poor response may increase the likelihood of recurrence. As such, understanding factors such as treatment outcome on recurrence is highly valuable for deciding a patient’s next steps.
+This study investigates the following research question: Controlling for age, gender, prior radiotherapy, and clinical risk classification, is initial treatment response a statistically significant predictor of thyroid cancer recurrence? We hypothesize that the initial treatment response is a statistically significant predictor of thyroid cancer recurrence, holding other variables we suspect to be significant constant.
   
-This study investigates the following research question: Holding other relevant factors constant (age, gender, prior radiotherapy, and clinical risk classification), is initial treatment response a statistically significant predictor of thyroid cancer recurrence? We hypothesize that the response to the treatment is a statistically significant predictor of thyroid cancer recurrence, holding other variables we suspect to be significant constant.
-  
-Our findings indicate that treatment outcome is a statistically significant predictor of recurrence when controlling for age, gender, radiotherapy history, and risk classification. We also explore the relationships among these explanatory variables for further statistical analysis.
-  
+Our findings indicate that treatment outcome is a statistically significant predictor of recurrence when controlling for age, gender, radiotherapy history, and risk classification. We also explore the influence and interrelationships of additional explanatory variables to provide a more comprehensive understanding of recurrence risk in differentiated thyroid cancer patients.
   
 ## **Methods**
-The dataset for this study was sourced from Kaggle and originates from a published article by Hamadan University in the European Archives of Oto-Rhino-Laryngology. It contains data on 383 thyroid cancer patients, each of whom was followed for at least 10 years, with records spanning over a 15-year period. The dataset includes information related to patient demographics, treatment history, and clinical outcomes.
+Our dataset was sourced from Kaggle and originates from a published article by Hamadan University in the European Archives of Oto-Rhino-Laryngology. It contains data on 383 thyroid cancer patients, each of whom was followed for at least 10 years, with records spanning over a 15-year period. The dataset includes information related to patient demographics, treatment history, and clinical outcomes.
 
 To answer our research question, we examined the following variables: 
 
@@ -52,11 +53,8 @@ To answer our research question, we examined the following variables:
 - Risk (3 Level Categorical Explanatory Variable): Cancer risk classification (low, medium, high).
 - TreatmentOutcome (4 Level Categorical Explanatory Variable): Initial treatment response (excellent, indeterminate, structural incomplete, biochemical incomplete).
 
-For further analysis, we recoded the Recurrence variable as a binary indicator (0 = no recurrence, 1 = recurrence) and collapsed Risk into a binary variable (high vs. not high). We then fit a multiple logistic regression model using recurrence as the response variable and the following as the predictors: treatment outcome, age, gender, radiotherapy history, and binary risk classification.
+For further analysis, we recoded the Recurrence variable as a numeric binary indicator (0 = no recurrence, 1 = recurrence) and collapsed Risk into a binary variable (high vs. not high). We then fit a multiple logistic regression model using recurrence as the response variable and the following as the predictors: treatment outcome, age, gender, radiotherapy history, and binary risk classification.
 $$ \text{Recurrence} = \beta_0 + \beta_1 \cdot \text{TreatmentOutcome} + \beta_2 \cdot \text{Age} + \beta_3 \cdot \text{Gender} + \beta_4 \cdot \text{Radiotherapy} + \beta_5 \cdot \text{risk\_binary} $$
-#! GRAHAM SAYS WE COULD DISCUSS AN EMPIRICAL LOGIT PLOT SPECIFICALLY FOR AGE SINCE IT IS QUANTITATIVE
-
-Since our primary predictors are categorical, the assumption of linearity in the logit is satisfied by design. The assumption of independence was reasonably satisfied, as each patient was observed and followed individually, with no repeated measures or clustering. The assumption of randomness, however, was only partially met. Although patients were randomly assigned to training and validation sets, they were originally drawn from a single medical center, limiting the generalizability of the results. As such, inferential statistics should be interpreted as valid within this clinical sample, but not necessarily generalizable to the broader thyroid cancer population without further external validation.
 
 ```{r echo = F, include = F}
 data <- data %>%
@@ -84,6 +82,9 @@ data$TreatmentOutcome <- factor(data$TreatmentOutcome,
 logistic_model <- glm(Recurred ~ TreatmentOutcome + Age + Gender + Radiotherapy + risk_binary, data, family = "binomial")
 ```
 
+#! GRAHAM SAYS WE COULD DISCUSS AN EMPIRICAL LOGIT PLOT SPECIFICALLY FOR AGE SINCE IT IS QUANTITATIVE
+
+Since our primary predictors are categorical, the assumption of linearity in the logit is satisfied by design. The assumption of independence was reasonably satisfied, as each patient was observed and followed individually, with no repeated measures or clustering. The assumption of randomness, however, was only partially met. Although patients were randomly assigned to training and validation sets, they were originally drawn from a single medical center, limiting the generalizability of the results. As such, inferential statistics should be interpreted as valid within this clinical sample, but not necessarily generalizable to the broader thyroid cancer population without further external validation.
 
 ## **Analysis and Results**
 
@@ -104,20 +105,38 @@ The fitted model is structured as follows, with Indeterminate as the reference c
 & - 26.058\,\text{(risk\_binaryNotHigh)}
 \end{align*}
 
-Based on the table, we can see that TreatmentOutcome is a strong and statistically significant predictor of thyroid cancer recurrence.Excellent had a p-value of 0.005, Biochemical Incomplete had a p-value of 0.009, and Structural Incomplete had a p-value < 0.001. Since TreatmentOutcome is a categorical variable encoded via dummy variables, its coefficients can be interpreted without standardization.
-#! CAN WE INTERPRET COEFFICIENTS EVEN IF WE DIDNT STANDARDIZE CUZ CATEGORICAL AND USED DUMMY??
+Based on the table, we can see that TreatmentOutcome is a strong and statistically significant predictor of thyroid cancer recurrence. Excellent had a p-value of 0.005, Biochemical Incomplete had a p-value of 0.009, and Structural Incomplete had a p-value < 0.001. Since TreatmentOutcome is a categorical variable encoded via dummy variables, its coefficients can be interpreted without standardization.
+
 Excellent outcome group had a coefficient of -3.034, which corresponds to an odds ratio of $e^{-3.034} = 0.048$. This means that their odds of recurrence are about 0.048 times those of the Indeterminate group, holding all other variables constant, indicating substantially lower odds of recurrence than those with an Indeterminate outcome. The Biochemical Incomplete outcome group has a coefficient of 1.663. The corresponding odds ratio is $e^{1.663} = 5.275$, indicating that their odds of recurrence are approximately 5.275 times greater than those in the Indeterminate group. The Structural Incomplete outcome group has a coefficient of 5.671. The odds ratio is $e^{5.671} = 290.32$, meaning that the Structural Incomplete group has approximately 290.32 times greater odds of recurrence than the Indeterminate group, reflecting dramatically increased odds of recurrence.
 
-These results confirm that treatment outcome is a strong and statistically significant predictor of thyroid cancer recurrence. The magnitude of these odds ratios suggest that the clinical response to initial treatment plays a crucial role in long-term recurrence risk. The bar plot below visualizes the proportion of recurrence across treatment outcome categories.
+These results confirm that treatment outcome is a strong and statistically significant predictor of thyroid cancer recurrence. The direction and magnitude of the coefficients align with clinical expectations: the better the initial treatment outcome, the lower the risk of recurrence. The bar plot below visualizes the proportion of recurrence across treatment outcome categories.
 
 ```{r echo = F, fig.width = 6.5, fig.height= 3.75}
 ggplot(data, aes(x = TreatmentOutcome, y = Recurred/sum(Recurred))) +
   geom_col() +
   labs(x = "Outcome of Treatment", y = "Proportion of Recurrence", title = "Proportion of Recurrence by Treatment Response")
 ```
-While both Age and Gender were not statistically significant predictors at the conventiona 0.05 level (with p-value = 0.125 and p-value = 0.107 respectively), they are close to the significance level of 0.01 and may be worth investigating. Notably, holding all else constant, the odds of recurrence increases by approximately 3% per year of age, as $e^{0.03} = 1.03$. To explore these relationships further, we conducted univariate logistic regressions (see Appendix), where both Age and Gender were found to be individually significant predictors of recurrence. This discrepancy may be due to multicollinearity or overlapping variance with TreatmentOutcome. 
+While both Age and Gender were not statistically significant predictors at the conventiona 0.05 level (with p-value = 0.125 and p-value = 0.107 respectively), they are close to the significance level of 0.01 and may be worth investigating. Notably, holding all else constant, the odds of recurrence increases by approximately 3% per year of age, as $e^{0.03} = 1.03$. To investigate the individual contributions of Age and Gender, we conducted univariate logistic regressions using Age and Gender as the sole predictors to isolate individual effects.
 
-The exploratory plots of recurrence by Age and Gender below further support their potential relevance.
+```{r echo = F, Warning = F}
+logistic_Age <- glm(Recurred ~ Age, data, family = "binomial")
+logistic_Gender <- glm(Recurred ~ Gender, data, family = "binomial")
+
+age_table <- tidy(logistic_Age) %>%
+  mutate(p.value = format.pval(p.value, digits = 3, scientific = TRUE))
+
+gender_table <- tidy(logistic_Gender) %>%
+  mutate(p.value = format.pval(p.value, digits = 3, scientific = TRUE))
+
+kable(age_table, caption = "Univariate Logistic Regression: Recurred ~ Age")
+kable(gender_table, caption = "Univariate Logistic Regression: Recurred ~ Gender")
+```
+Interestingly, when modeled individually, both Age and Gender were statistically significant predictors of thyroid cancer recurrence. In the univariate model, Age had a p-value = 9.82e-07, indicating a significant positive association with recurrence risk. Similarly, Gender was significant in its respectivel model, with a p-value = 1.39e-09. 
+
+However, as we saw earlier, neither Age nor Gender were statistically significant at the 0.05 level in the multivariable model. This discrepency may be due to confounding or multicollinearity. That is, the effects of Age and Gender may be explained or diminished once other covariates, such as treatment outcome or clinical risk classification, are taken into account.
+
+The exploratory plots below further support potential relationships between Age, Gender, and Recurrence. The logistic  curve in the left panel suggests a positive association between Age and Recurrence, while the proportional bar chart in the right panel indicates that recurrence was more common among male patients.
+
 ```{r , Message = F, Warning = F, fig.width = 8, fig.height= 3.5, echo = F}
 p1 <- ggplot(data, aes(x = Age, y = Recurred)) + 
   geom_jitter(height = 0.02, alpha = 0.4) +
@@ -129,9 +148,10 @@ p2 <- ggplot(data, aes(x = Gender, fill = factor(Recurred))) +
 
 suppressMessages(suppressWarnings(grid.arrange(p1, p2, nrow = 1)))
 ```
-We also examined whether Age and Gender are associated with the patient's treatment outcome.
 
-```{r , Message = F, Warning = F, fig.width = 10, fig.height= 3.5, echo = F}
+We also examined whether Age and Gender are associated with the patient's treatment outcome through data visualizations.
+
+```{r, Message = F, Warning = F, fig.width = 10, fig.height= 3.5, echo = F}
 p3 <- ggplot(data, aes(x = Age, y = TreatmentOutcome)) + 
   geom_boxplot() +
   labs(x = "Age (years)", y = "Treatment Outcome", title = "Treatment Outcome by Age")
@@ -142,7 +162,11 @@ p4 <- ggplot(data, aes(x = factor(Gender), fill = as.factor(TreatmentOutcome))) 
 
 suppressMessages(suppressWarnings(grid.arrange(p3, p4, nrow = 1)))
 ```
-In the boxplot comparing Age by Treatment Outcome categories, we observe that the Excellent outcome group has a visibly low median age compared to other groups, while the remaining groups show similar distributions. Gender also appears to influence treatment response. The stacked bar chart shows that females are disproportionately more likely to have an Excellent outcome. Conversely, Males are disproportionally much more likely to get a Structural Incomplete treatment outcome than Females. Indeterminate and Biochemical Incomplete outcomes appear relatively evenly distributed across genders.
+In the boxplot comparing Age across Treatment Outcome categories, we observe that patients in the Excellent group tend to be younger, with a noticeably lower median age compared to the other groups. The remaining categories exhibit more similar age distributions with greater spread and higher medians. This suggests that younger age may be associated with more favorable treatment outcomes.
+
+Gender also appears to influence treatment response. Female patients appear disproportionately more likely to achieve an Excellent treatment response, while male patients appear disproportionately more likely to be in the Structural Incomplete group. The Indeterminate and Biochemical Incomplete categories are more evenly distributed across genders. 
+
+## FLOW WITH PLOT THOUGHTS?
 
 The trends in Age were formally assessed using a one-way ANOVA. The conditions for this model are sufficiently satisfied to imply correlation, and are discussed in the appendix.
 ```{r echo = F}
@@ -180,7 +204,7 @@ vif_df <- as.data.frame(vif(logistic_model))
 knitr::kable(round(vif_df, 3), caption = "Generalized Variance Inflation Factors (GVIFs)")
 ```
 
-All adjusted GVIF values were well below the conventional thresholds of 5 ~ 10, indicating that multicollinearity is not a serious concern in this model. We also examined pairwise Pearson correlations among numeric predictors.
+Interestingly, adjusted GVIF values were well below the conventional thresholds of 5 ~ 10, indicating that multicollinearity is not a serious concern in this model. We also examined pairwise Pearson correlations among numeric predictors.
 
 ```{r echo = F}
 data$Gender_num <- ifelse(data$Gender == "M", 1, 0)
@@ -196,24 +220,26 @@ corr_data <- data.frame(
 cor_matrix <- cor(corr_data, use = "complete.obs")
 knitr::kable(round(cor_matrix, 2), caption = "Correlation Matrix of Numeric Predictors")
 ```
-Radiotherapy and Risk exhibit a moderate correlation (0.38), which aligns with the slightly elevated GVIFs for both variables. This relationship is clincially plausible, as high-risk patients are more likely to receive radiotherapy. All other correlations are weak to moderate and do not indicate concern for multicollinearity.
+Radiotherapy and Risk exhibit a moderate correlation (0.38), which aligns with the slightly elevated GVIFs for both variables. This relationship is clinically plausible, as high-risk patients are more likely to receive radiotherapy. All other correlations are weak to moderate and do not indicate concern for multicollinearity.
 
 ## **Discussion**
-This study investigated whether initial treatment response is a statistically significant predictor of thyroid cancer recurrence, controlling for age, gender, radiotherapy history, and risk classification. Our analysis revealed hat treatment outcome is a strong and statistically significant predictor of recurrence. Specifically, patients with a structural incomplete response had dramatically elevated odds of recurrence, while those with an excellent response had substantially lower odds. These findings support our hypothesis and highlight the importance of monitoring and interpreting treatment response when planning long-term care for thyroid cancer patients.
+Our results support the hypothesis that treatment outcome is a strong and statistically significant predictor of recurrence. Specifically, patients with a structural incomplete response had dramatically elevated odds of recurrence, while those with an excellent response had substantially lower odds.
 
-Although Age and Gender were not statistically significant in the multi logistic regression model, exploratory and univariate analyses suggested that they are individually associated with recurrence and many influence treatment outcome. 
+Although Age and Gender were not statistically significant in the multi logistic regression model, univariate and exploratory analyses suggested that they are individually associated with recurrence and may influence treatment outcome.
 
-While our findings offer meaningful insights, they are primarily generalizable to the sample population from which the data were drawn. The data was not randomly sampled from the broader thyroid cancer population, which limits the extent to which we can generalize our conclusions to all patients with thyroid cancer. The assumptions of independence and randomness were only partially satisfied. Although each patient was independently observed, the sample lacks random representation of the general population. 
-Because this was an observational study, causal inference cannot be made. We can say that treatment outcome is strongly associated with recurrence, but we cannot conclude that one causes the other. It is possible that unmeasured confounding variables (e.g. genetic markers, comorbidities) may influence both treatment response and recurrence risk. Further studies using randomized controlled trial data or longitudinal designs would be better suited for identifying causal relationships.
+However, these findings must be interpreted within the context of the study's limitations. For one, the data was not randomly sampled from the broader thyroid cancer population; it came from a single medical center. Although each patient was independently observed, the sample lacks random representation of the general population. This limits the extent to which we can generalize our conclusions to all patients with thyroid cancer. 
 
-There are several limiations to this study. For one, Risk and Radiotherapy had large standard errors. Though not statisticaly significant predictors in this model, their relationship remains clinically important and warrants cleaner data or larger sample sizes to clarify their roles. Potential selection bias may also be present, as the dataset may overrepresent patients with more complete follow up cases, given the 15-year tracking requirement. 
+Additionally, because this was an observational study, causal inference cannot be made. We can say that treatment outcome is strongly associated with recurrence, but we cannot conclude that one causes the other. It is possible that unmeasured confounding variables (e.g. genetic markers, comorbidities) may influence both treatment response and recurrence risk. 
 
-Future research should consider including additional clinical variables such as tumor size, molecular markers, or comorbidities that may help refine prediction.  
+Risk and Radiotherapy also had large standard errors due to uneven distributions. Though not statistically significant predictors in this model, their relationship remains clinically important and warrants cleaner data or larger sample sizes to clarify their roles. 
+
+Potential selection bias may also be present, as the dataset may overrepresent patients with more complete follow up cases, given the 15-year tracking requirement. 
+
+Future research should consider including additional clinical variables such as tumor size, molecular markers, or comorbidities that may help refine prediction. Further studies should also consider experimental designs to enable causal inference, and use more diverse samples for generalizability.
+
 
 \newpage
-## **Appendix**
-
-References:
+## **References**
 
 Borzooei, S., Briganti, G., Golparian, M. et al. Machine learning for risk stratification of thyroid cancer patients: a 15-year cohort study. 
   Eur Arch Otorhinolaryngol 281, 2095–2104 (2024). https://doi.org/10.1007/s00405-023-08299-w.
@@ -224,39 +250,14 @@ Borzooei, S., Briganti, G., Golparian, M. et al. Machine learning for risk strat
   www.mayoclinic.org/diseases-conditions/thyroid-cancer/symptoms-causes/syc-20354161.
 
 
-Source Used for Data:
-
 "Thyroid Cancer Recurrence Dataset." Kaggle (2025). https://www.kaggle.com/datasets/aneevinay/thyroid-cancer-recurrence-dataset
 
 
-Data:
-
-```{r}
-#Both Age and Gender individually are statistically significant
-logistic_Age <- glm(Recurred ~ Age, data, family = "binomial")
-summary(logistic_Age)
-
-logistic_Gender <- glm(Recurred ~ Gender, data, family = "binomial")
-summary(logistic_Gender)
-```
-```{r}
-#Discuss the ANOVA model conditions #!
+\newpage
+## **Appendix**
+```{r echo = F}
+par(mfrow = c(2, 2)) 
 plot(model)
 ```
-
-We see that this satisfies the ANOVA model conditions well enough to imply correlation:
-
-Residuals are random and independent - discussed in the Methods section (the logarithmic analysis for this condition is the same here)
-
-Effects are constant & additive - Residuals vs fitted graph
-
-Residuals have the same variability in each group - based on the boxplot shown in the analysis, this seems relatively satisfied, only the excellent condition has a lower variability
-
-Residuals are normally distributed - the residuals deviate from the normality line quite drastically at lower theoretical quantiles
-
-
-
-
-
-
-
+#! DO WE NEED THIS
+The diagnostic plots show that the ANOVA model conditions have been relatively well satisfied. Randomness and Independence have been decently met as discussed in the Methods section. In the Residuals vs Fitted plot, the spread of the residuals appears to be relatively consistent across the range of fitted values. There isn't a clear indication of increasing or decreasing variance. In the Normal Q-Q Plot, the residuals appear to be normally distributed. There are some minor deviations at the tails, but they don't appear to be drastically severe. In the Scale Location plot, the points seem to be scattered relatively randomly around a horizontal line. There isn't a strong trend suggesting unequal variance. The Residuals vs Leverage plot also doesn't indicate the presence of highly influential outliers that would severely violate the ANOVA assumptions.
