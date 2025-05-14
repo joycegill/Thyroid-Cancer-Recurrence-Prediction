@@ -84,6 +84,39 @@ logistic_model <- glm(Recurred ~ TreatmentOutcome + Age + Gender + Radiotherapy 
 
 #! GRAHAM SAYS WE COULD DISCUSS AN EMPIRICAL LOGIT PLOT SPECIFICALLY FOR AGE SINCE IT IS QUANTITATIVE
 
+```{r, echo = F, Warning = F}
+data <- data %>%
+  mutate(AgeQuintile = cut(Age, 
+                           breaks = quantile(Age, c(0, .2, .4, .6, .8, 1), na.rm = TRUE), 
+                           labels = FALSE, 
+                           include.lowest = TRUE))
+
+prop_data <- data %>%
+  group_by(AgeQuintile, Recurred, .drop = FALSE) %>%
+  summarize(n = n()) %>%
+  mutate(prop = n / sum(n),
+         odds = prop/(1-prop),
+         log_odds = log(odds)) %>%
+  filter(Recurred == 1)
+
+mean_quint_age <- data %>% 
+  group_by(AgeQuintile) %>% 
+  summarize(mean = mean(Age))
+mean_quint_age
+
+prop_data <- prop_data %>% 
+  ungroup() %>% 
+  mutate(mean_age = mean_quint_age$mean)
+prop_data
+
+
+ggplot(prop_data, aes(x = mean_age, y = log_odds)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(x = "Average Age", y = "Log Odds", title = "Empirical Logit Plot")
+```
+
+
 Since our primary predictors are categorical, the assumption of linearity in the logit is satisfied by design. The assumption of independence was reasonably satisfied, as each patient was observed and followed individually, with no repeated measures or clustering. The assumption of randomness, however, was only partially met. Although patients were randomly assigned to training and validation sets, they were originally drawn from a single medical center, limiting the generalizability of the results. As such, inferential statistics should be interpreted as valid within this clinical sample, but not necessarily generalizable to the broader thyroid cancer population without further external validation.
 
 ## **Analysis and Results**
@@ -166,7 +199,7 @@ In the boxplot comparing Age across Treatment Outcome categories, we observe tha
 
 Gender also appears to influence treatment response. Female patients appear disproportionately more likely to achieve an Excellent treatment response, while male patients appear disproportionately more likely to be in the Structural Incomplete group. The Indeterminate and Biochemical Incomplete categories are more evenly distributed across genders. 
 
-## FLOW WITH PLOT THOUGHTS?
+## FLOW WITH PLOT THOUGHTS? (GENDER)
 
 The trends in Age were formally assessed using a one-way ANOVA. The conditions for this model are sufficiently satisfied to imply correlation, and are discussed in the appendix.
 ```{r echo = F}
@@ -259,5 +292,4 @@ Borzooei, S., Briganti, G., Golparian, M. et al. Machine learning for risk strat
 par(mfrow = c(2, 2)) 
 plot(model)
 ```
-#! DO WE NEED THIS
 The diagnostic plots show that the ANOVA model conditions have been relatively well satisfied. Randomness and Independence have been decently met as discussed in the Methods section. In the Residuals vs Fitted plot, the spread of the residuals appears to be relatively consistent across the range of fitted values. There isn't a clear indication of increasing or decreasing variance. In the Normal Q-Q Plot, the residuals appear to be normally distributed. There are some minor deviations at the tails, but they don't appear to be drastically severe. In the Scale Location plot, the points seem to be scattered relatively randomly around a horizontal line. There isn't a strong trend suggesting unequal variance. The Residuals vs Leverage plot also doesn't indicate the presence of highly influential outliers that would severely violate the ANOVA assumptions.
