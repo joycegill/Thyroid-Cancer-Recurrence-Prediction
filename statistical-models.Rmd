@@ -82,7 +82,8 @@ data$TreatmentOutcome <- factor(data$TreatmentOutcome,
 logistic_model <- glm(Recurred ~ TreatmentOutcome + Age + Gender + Radiotherapy + risk_binary, data, family = "binomial")
 ```
 
-#! GRAHAM SAYS WE COULD DISCUSS AN EMPIRICAL LOGIT PLOT SPECIFICALLY FOR AGE SINCE IT IS QUANTITATIVE
+
+Since our primary predictors are categorical, the assumption of linearity in the logit is satisfied by design. The only quantitative variable, age, raises some slight concerns, but nothing that invalidates the model. We can see that variance remains relatively constant with the exception of the 4th quintile, however it is not outside the standard deviation. Apart from this point, there is also a linear shape. The assumption of independence was reasonably satisfied, as each patient was observed and followed individually, with no repeated measures or clustering. The assumption of randomness, however, was only partially met. Although patients were randomly assigned to training and validation sets, they were originally drawn from a single medical center, limiting the generalizability of the results. As such, inferential statistics should be interpreted as valid within this clinical sample, but not necessarily generalizable to the broader thyroid cancer population without further external validation.
 
 ```{r, echo = F, Warning = F}
 data <- data %>%
@@ -115,9 +116,6 @@ ggplot(prop_data, aes(x = mean_age, y = log_odds)) +
   geom_smooth(method = "lm", se = TRUE) +
   labs(x = "Average Age", y = "Log Odds", title = "Empirical Logit Plot")
 ```
-
-
-Since our primary predictors are categorical, the assumption of linearity in the logit is satisfied by design. The assumption of independence was reasonably satisfied, as each patient was observed and followed individually, with no repeated measures or clustering. The assumption of randomness, however, was only partially met. Although patients were randomly assigned to training and validation sets, they were originally drawn from a single medical center, limiting the generalizability of the results. As such, inferential statistics should be interpreted as valid within this clinical sample, but not necessarily generalizable to the broader thyroid cancer population without further external validation.
 
 ## **Analysis and Results**
 
