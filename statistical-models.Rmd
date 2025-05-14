@@ -116,7 +116,7 @@ ggplot(data, aes(x = TreatmentOutcome, y = Recurred/sum(Recurred))) +
   geom_col() +
   labs(x = "Outcome of Treatment", y = "Proportion of Recurrence", title = "Proportion of Recurrence by Treatment Response")
 ```
-While both Age and Gender were not statistically significant predictors at the conventiona 0.05 level (with p-value = 0.125 and p-value = 0.107 respectively), they are close to the significance level of 0.01 and may be worth investigating. Notably, holding all else constant, the odds of recurrence increases by approximately 3% per year of age, as $e^{0.03} = 1.03$. To investigate the individual contributions of Age and Gender, we conducted univariate logistic regressions using Age and Gender as the sole predictors to isolate individual effects.
+While both Age and Gender were not statistically significant predictors at the conventional 0.05 level (with p-value = 0.125 and p-value = 0.107 respectively), they are close to the significance level of 0.1 and may be worth investigating. Notably, holding all else constant, the odds of recurrence increases by approximately 3% per year of age, as $e^{0.03} = 1.03$. To investigate the individual contributions of Age and Gender, we conducted univariate logistic regressions using Age and Gender as the sole predictors to isolate individual effects.
 
 ```{r echo = F, Warning = F}
 logistic_Age <- glm(Recurred ~ Age, data, family = "binomial")
@@ -131,9 +131,9 @@ gender_table <- tidy(logistic_Gender) %>%
 kable(age_table, caption = "Univariate Logistic Regression: Recurred ~ Age")
 kable(gender_table, caption = "Univariate Logistic Regression: Recurred ~ Gender")
 ```
-Interestingly, when modeled individually, both Age and Gender were statistically significant predictors of thyroid cancer recurrence. In the univariate model, Age had a p-value = 9.82e-07, indicating a significant positive association with recurrence risk. Similarly, Gender was significant in its respectivel model, with a p-value = 1.39e-09. 
+Interestingly, when modeled individually, both Age and Gender were statistically significant predictors of thyroid cancer recurrence. In the univariate model, Age had a p-value = 9.82e-07, indicating a significant positive association with recurrence risk. Similarly, Gender was significant in its respective model, with a p-value = 1.39e-09. 
 
-However, as we saw earlier, neither Age nor Gender were statistically significant at the 0.05 level in the multivariable model. This discrepency may be due to confounding or multicollinearity. That is, the effects of Age and Gender may be explained or diminished once other covariates, such as treatment outcome or clinical risk classification, are taken into account.
+However, as we saw earlier, neither Age nor Gender were statistically significant at the 0.05 level in the multivariable model. This discrepency may be due to confounding variables or multicollinearity. That is, the effects of Age and Gender may be explained or diminished once other covariates, such as treatment outcome or clinical risk classification, are taken into account.
 
 The exploratory plots below further support potential relationships between Age, Gender, and Recurrence. The logistic  curve in the left panel suggests a positive association between Age and Recurrence, while the proportional bar chart in the right panel indicates that recurrence was more common among male patients.
 
@@ -149,7 +149,7 @@ p2 <- ggplot(data, aes(x = Gender, fill = factor(Recurred))) +
 suppressMessages(suppressWarnings(grid.arrange(p1, p2, nrow = 1)))
 ```
 
-We also examined whether Age and Gender are associated with the patient's treatment outcome through data visualizations.
+These exploratory graphs were created to consider whether multicollinearity was present, examining if Age and Gender are associated with the patient's treatment outcome.
 
 ```{r, Message = F, Warning = F, fig.width = 10, fig.height= 3.5, echo = F}
 p3 <- ggplot(data, aes(x = Age, y = TreatmentOutcome)) + 
