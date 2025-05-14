@@ -33,9 +33,9 @@ data <- read.csv("https://raw.githubusercontent.com/joycegill/Thyroid-Cancer-Rec
 
 \newpage
 ## **Introduction**
-Cancer is the unregulated proliferation of cells which consume dangerous and disproportionately high amounts of energy from the body. In the United States, cancer is the leading cause of death for people under 65 years old, highlighting the ongoing need for targeted research (Cancer.gov 2025). This study focuses specifically on thyroid cancer, which is projected to account for approximately 44,000 new cases this year. Unlike many other cancer types with significantly declining mortality rates, thyroid cancer has exhibited a slight upward trend in mortality. (Cancer.gov, 2025).
+Cancer is the unregulated proliferation of cells which consume dangerous and disproportionately high amounts of energy from the body. In the United States, cancer is the leading cause of death for people under 65 years old, highlighting the ongoing need for targeted research (Cancer.gov, 2025). This study focuses specifically on thyroid cancer, which is projected to account for approximately 44,000 new cases this year. Unlike many other cancer types with significantly declining mortality rates, thyroid cancer has exhibited a slight upward trend in mortality. (Cancer.gov, 2025).
 
-Luckily, thyroid cancer is often treatable, with common interventions including surgical removal of the thyroid and Radioactive Iodine therapy (RAI), which selectively targets thyroid tissues via systemic administration of radioactive iodine (Mayo Clinic 2024). However, treatment response can vary, and understanding the relationship between initial treatment outcome and recurrence is essential for guiding clinical follow-up and secondary interventions. 
+Luckily, thyroid cancer is often treatable, with common interventions including surgical removal of the thyroid and Radioactive Iodine therapy (RAI), which selectively targets thyroid tissues via systemic administration of radioactive iodine (Mayo Clinic, 2024). However, treatment response can vary, and understanding the relationship between initial treatment outcome and recurrence is essential for guiding clinical follow-up and secondary interventions. 
   
 This study investigates the following research question: Controlling for age, gender, prior radiotherapy, and clinical risk classification, is initial treatment response a statistically significant predictor of thyroid cancer recurrence? We hypothesize that the initial treatment response is a statistically significant predictor of thyroid cancer recurrence, holding other variables we suspect to be significant constant.
   
@@ -257,6 +257,9 @@ Borzooei, S., Briganti, G., Golparian, M. et al. Machine learning for risk strat
 
 \newpage
 ## **Appendix**
+
+Age vs Recurrence Empirical Logit Plot
+
 ```{r, echo = F, Warning = F, fig.width = 4, fig.height= 3, fig.align = 'center'}
 data <- data %>%
   mutate(AgeQuintile = cut(Age, 
@@ -291,9 +294,10 @@ ggplot(prop_data, aes(x = mean_age, y = log_odds)) +
 
 ```
 
+
+ANOVA (Age ~ Treatment) Diagnostic Plots
+
 ```{r echo = F}
 par(mfrow = c(2, 2)) 
 plot(model)
 ```
-
-
