@@ -1,5 +1,5 @@
 ---
-title: 'Predicting Thyroid Cancer Recurrence'
+title: 'Modeling Thyroid Cancer Recurrence Using Initial Treatment Response'
 author: "Joyce Gill, Matthew Billings-Chiu"
 date: "2025-05-02"
 output:
@@ -83,39 +83,9 @@ logistic_model <- glm(Recurred ~ TreatmentOutcome + Age + Gender + Radiotherapy 
 ```
 
 
-Since our primary predictors are categorical, the assumption of linearity in the logit is satisfied by design. The only quantitative variable, age, raises some slight concerns, but nothing that invalidates the model. We can see that variance remains relatively constant with the exception of the 4th quintile, however it is not outside the standard deviation. Apart from this point, there is also a linear shape. The assumption of independence was reasonably satisfied, as each patient was observed and followed individually, with no repeated measures or clustering. The assumption of randomness, however, was only partially met. Although patients were randomly assigned to training and validation sets, they were originally drawn from a single medical center, limiting the generalizability of the results. As such, inferential statistics should be interpreted as valid within this clinical sample, but not necessarily generalizable to the broader thyroid cancer population without further external validation.
+Since our primary predictors are categorical, the assumption of linearity in the logit is satisfied by design. The only quantitative variable, age, raises some slight concerns, but nothing that invalidates the model. We can see that variance remains relatively constant with the exception of the 4th quintile, however it is not outside the standard deviation. Apart from this point, there is also a linear shape. The empirical logit plot can be found in the Appendix. 
 
-```{r, echo = F, Warning = F}
-data <- data %>%
-  mutate(AgeQuintile = cut(Age, 
-                           breaks = quantile(Age, c(0, .2, .4, .6, .8, 1), na.rm = TRUE), 
-                           labels = FALSE, 
-                           include.lowest = TRUE))
-
-prop_data <- data %>%
-  group_by(AgeQuintile, Recurred, .drop = FALSE) %>%
-  summarize(n = n()) %>%
-  mutate(prop = n / sum(n),
-         odds = prop/(1-prop),
-         log_odds = log(odds)) %>%
-  filter(Recurred == 1)
-
-mean_quint_age <- data %>% 
-  group_by(AgeQuintile) %>% 
-  summarize(mean = mean(Age))
-mean_quint_age
-
-prop_data <- prop_data %>% 
-  ungroup() %>% 
-  mutate(mean_age = mean_quint_age$mean)
-prop_data
-
-
-ggplot(prop_data, aes(x = mean_age, y = log_odds)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = TRUE) +
-  labs(x = "Average Age", y = "Log Odds", title = "Empirical Logit Plot")
-```
+The assumption of independence was reasonably satisfied, as each patient was observed and followed individually, with no repeated measures or clustering. The assumption of randomness, however, was only partially met. Although patients were randomly assigned to training and validation sets, they were originally drawn from a single medical center, limiting the generalizability of the results. As such, inferential statistics should be interpreted as valid within this clinical sample, but not necessarily generalizable to the broader thyroid cancer population without further external validation.
 
 ## **Analysis and Results**
 
@@ -124,7 +94,6 @@ We fit the logistic regression model described above to predict thyroid cancer r
 kable(summary(logistic_model)$coefficients, digits = 3, caption = "Logistic Regression for Thyroid Cancer Recurrence")
 ```
 The fitted model is structured as follows, with Indeterminate as the reference category for the TreatmentOutcome variable:
-
 \begin{align*}
 \log\left(\frac{\pi}{1 - \pi}\right) =\ & 22.392 \\
 & - 3.034\,\text{(TreatmentOutcomeExcellent)} \\
@@ -147,6 +116,7 @@ ggplot(data, aes(x = TreatmentOutcome, y = Recurred/sum(Recurred))) +
   geom_col() +
   labs(x = "Outcome of Treatment", y = "Proportion of Recurrence", title = "Proportion of Recurrence by Treatment Response")
 ```
+
 While both Age and Gender were not statistically significant predictors at the conventional 0.05 level (with p-value = 0.125 and p-value = 0.107 respectively), they are close to the significance level of 0.1 and may be worth investigating. Notably, holding all else constant, the odds of recurrence increases by approximately 3% per year of age, as $e^{0.03} = 1.03$. To investigate the individual contributions of Age and Gender, we conducted univariate logistic regressions using Age and Gender as the sole predictors to isolate individual effects.
 
 ```{r echo = F, Warning = F}
@@ -166,7 +136,9 @@ Interestingly, when modeled individually, both Age and Gender were statistically
 
 However, as we saw earlier, neither Age nor Gender were statistically significant at the 0.05 level in the multivariable model. This discrepency may be due to confounding variables or multicollinearity. That is, the effects of Age and Gender may be explained or diminished once other covariates, such as treatment outcome or clinical risk classification, are taken into account.
 
-The exploratory plots below further support potential relationships between Age, Gender, and Recurrence. The logistic  curve in the left panel suggests a positive association between Age and Recurrence, while the proportional bar chart in the right panel indicates that recurrence was more common among male patients.
+The exploratory plots below further support potential relationships between Age, Gender, and Recurrence. The logistic regression curve in the left panel shows a clear upward trend, suggesting a positive association between age and the probability of thyroid cancer recurrence. As patient age increases, so does the likelihood of recurrence, with a particularly steep increase observed after approximately age 60.
+
+The right panel displays a proportional bar chart comparing recurrence rates by gender. Visually, male patients exhibit a higher proportion of recurrence compared to female patients. This disparity implies that gender may also play a role in recurrence risk, with males appearing to be more vulnerable.
 
 ```{r , Message = F, Warning = F, fig.width = 8, fig.height= 3.5, echo = F}
 p1 <- ggplot(data, aes(x = Age, y = Recurred)) + 
@@ -193,13 +165,12 @@ p4 <- ggplot(data, aes(x = factor(Gender), fill = as.factor(TreatmentOutcome))) 
 
 suppressMessages(suppressWarnings(grid.arrange(p3, p4, nrow = 1)))
 ```
+
 In the boxplot comparing Age across Treatment Outcome categories, we observe that patients in the Excellent group tend to be younger, with a noticeably lower median age compared to the other groups. The remaining categories exhibit more similar age distributions with greater spread and higher medians. This suggests that younger age may be associated with more favorable treatment outcomes.
 
 Gender also appears to influence treatment response. Female patients appear disproportionately more likely to achieve an Excellent treatment response, while male patients appear disproportionately more likely to be in the Structural Incomplete group. The Indeterminate and Biochemical Incomplete categories are more evenly distributed across genders. 
 
-## FLOW WITH PLOT THOUGHTS? (GENDER)
-
-The trends in Age were formally assessed using a one-way ANOVA. The conditions for this model are sufficiently satisfied to imply correlation, and are discussed in the appendix.
+The trends in Age were formally assessed using a one-way ANOVA. The conditions for this model are sufficiently satisfied to imply correlation, and are shown in the appendix.
 ```{r echo = F}
 model <- aov(Age ~ TreatmentOutcome, data)
 anova_table <- summary(model)[[1]]
@@ -237,6 +208,7 @@ knitr::kable(round(vif_df, 3), caption = "Generalized Variance Inflation Factors
 
 Interestingly, adjusted GVIF values were well below the conventional thresholds of 5 ~ 10, indicating that multicollinearity is not a serious concern in this model. We also examined pairwise Pearson correlations among numeric predictors.
 
+\newpage
 ```{r echo = F}
 data$Gender_num <- ifelse(data$Gender == "M", 1, 0)
 data$risk_num <- ifelse(data$risk_binary == "High", 1, 0)
@@ -285,8 +257,43 @@ Borzooei, S., Briganti, G., Golparian, M. et al. Machine learning for risk strat
 
 \newpage
 ## **Appendix**
+```{r, echo = F, Warning = F, fig.width = 4, fig.height= 3, fig.align = 'center'}
+data <- data %>%
+  mutate(AgeQuintile = cut(Age, 
+                           breaks = quantile(Age, c(0, .2, .4, .6, .8, 1), na.rm = TRUE), 
+                           labels = FALSE, 
+                           include.lowest = TRUE))
+
+prop_data <- data %>%
+  group_by(AgeQuintile, Recurred, .drop = FALSE) %>%
+  summarize(n = n(), .groups = "drop") %>%
+  mutate(prop = n / sum(n),
+         odds = prop/(1-prop),
+         log_odds = log(odds)) %>%
+  filter(Recurred == 1)
+
+mean_quint_age <- data %>% 
+  group_by(AgeQuintile) %>% 
+  summarize(mean = mean(Age), .groups = "drop")
+
+prop_data <- prop_data %>% 
+  ungroup() %>% 
+  mutate(mean_age = mean_quint_age$mean)
+
+
+ggplot(prop_data, aes(x = mean_age, y = log_odds)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, formula = y ~ x) +
+  labs(x = "Average Age", y = "Log Odds", title = "Empirical Logit Plot") + 
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 12)
+  )
+
+```
+
 ```{r echo = F}
 par(mfrow = c(2, 2)) 
 plot(model)
 ```
-The diagnostic plots show that the ANOVA model conditions have been relatively well satisfied. Randomness and Independence have been decently met as discussed in the Methods section. In the Residuals vs Fitted plot, the spread of the residuals appears to be relatively consistent across the range of fitted values. There isn't a clear indication of increasing or decreasing variance. In the Normal Q-Q Plot, the residuals appear to be normally distributed. There are some minor deviations at the tails, but they don't appear to be drastically severe. In the Scale Location plot, the points seem to be scattered relatively randomly around a horizontal line. There isn't a strong trend suggesting unequal variance. The Residuals vs Leverage plot also doesn't indicate the presence of highly influential outliers that would severely violate the ANOVA assumptions.
+
+
