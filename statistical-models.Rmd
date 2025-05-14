@@ -33,7 +33,7 @@ data <- read.csv("https://raw.githubusercontent.com/joycegill/Thyroid-Cancer-Rec
 
 \newpage
 ## **Introduction**
-Cancer is the unregulated proliferation of cells which consume dangerous and disproportionately high amounts of energy from the body. In the United States, cancer is the leading cause of death for people under 65 years old, which calls for more research (Cancer.gov 2025). This study focuses on thyroid cancer, which is projected to account for approximately 44,000 new cases this year. Unlike many other cancer types with significantly declining mortality rates, thyroid cancer has exhibited a slight upward trend in mortality. (Cancer.gov, 2025).
+Cancer is the unregulated proliferation of cells which consume dangerous and disproportionately high amounts of energy from the body. In the United States, cancer is the leading cause of death for people under 65 years old, highlighting the ongoing need for targeted research (Cancer.gov 2025). This study focuses specifically on thyroid cancer, which is projected to account for approximately 44,000 new cases this year. Unlike many other cancer types with significantly declining mortality rates, thyroid cancer has exhibited a slight upward trend in mortality. (Cancer.gov, 2025).
 
 Luckily, thyroid cancer is often treatable, with common interventions including surgical removal of the thyroid and Radioactive Iodine therapy (RAI), which selectively targets thyroid tissues via systemic administration of radioactive iodine (Mayo Clinic 2024). However, treatment response can vary, and understanding the relationship between initial treatment outcome and recurrence is essential for guiding clinical follow-up and secondary interventions. 
   
@@ -46,12 +46,12 @@ Our dataset was sourced from Kaggle and originates from a published article by H
 
 To answer our research question, we examined the following variables: 
 
-- Recurrence (Binary Categorical Dependent Variable): Whether or not cancer recurred.
+- Recurrence (Binary Categorical Response Variable): Whether or not cancer recurred.
 - Age (Quantitative Explanatory Variable): Patient's age in years.
 - Gender (Binary Categorical Explanatory Variable): Male or female.
 - Radiotherapy (Binary Categorical Explanatory Variable): History of prior radiotherapy (yes or no).
 - Risk (3 Level Categorical Explanatory Variable): Cancer risk classification (low, medium, high).
-- TreatmentOutcome (4 Level Categorical Explanatory Variable): Initial treatment response (excellent, indeterminate, structural incomplete, biochemical incomplete).
+- TreatmentOutcome (4 Level Categorical Explanatory Variable): Initial treatment outcome (excellent, indeterminate, structural incomplete, biochemical incomplete).
 
 For further analysis, we recoded the Recurrence variable as a numeric binary indicator (0 = no recurrence, 1 = recurrence) and collapsed Risk into a binary variable (high vs. not high). We then fit a multiple logistic regression model using recurrence as the response variable and the following as the predictors: treatment outcome, age, gender, radiotherapy history, and binary risk classification.
 $$ \text{Recurrence} = \beta_0 + \beta_1 \cdot \text{TreatmentOutcome} + \beta_2 \cdot \text{Age} + \beta_3 \cdot \text{Gender} + \beta_4 \cdot \text{Radiotherapy} + \beta_5 \cdot \text{risk\_binary} $$
@@ -259,7 +259,6 @@ Radiotherapy and Risk exhibit a moderate correlation (0.38), which aligns with t
 Our results support the hypothesis that treatment outcome is a strong and statistically significant predictor of recurrence. Specifically, patients with a structural incomplete response had dramatically elevated odds of recurrence, while those with an excellent response had substantially lower odds.
 
 Although Age and Gender were not statistically significant in the multi logistic regression model, univariate and exploratory analyses suggested that they are individually associated with recurrence and may influence treatment outcome.
-
 However, these findings must be interpreted within the context of the study's limitations. For one, the data was not randomly sampled from the broader thyroid cancer population; it came from a single medical center. Although each patient was independently observed, the sample lacks random representation of the general population. This limits the extent to which we can generalize our conclusions to all patients with thyroid cancer. 
 
 Additionally, because this was an observational study, causal inference cannot be made. We can say that treatment outcome is strongly associated with recurrence, but we cannot conclude that one causes the other. It is possible that unmeasured confounding variables (e.g. genetic markers, comorbidities) may influence both treatment response and recurrence risk. 
