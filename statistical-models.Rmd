@@ -178,7 +178,7 @@ anova_table <- summary(model)[[1]]
 knitr::kable(anova_table, caption = "One-Way ANOVA: Age by Treatment Outcome")
 ```
 
-A One-Way ANOVA revealed statistically significant differences in Age across treatment outcome groups. We follow with a Tukey's post-hoc test to analyze the pairwise differences.
+A One-Way ANOVA revealed statistically significant differences in Age across treatment outcome groups. We follow with a Tukey's post-hoc test to analyze the pairwise differences. A Tukey's was chosen instead of Bonferroni or Fisher corrections because there were no major concerns about Type I or Type II errors in determining whether there was a correlation between Treatment Outcome and Age.
 
 ```{r echo = F}
 tukey <- TukeyHSD(model)
